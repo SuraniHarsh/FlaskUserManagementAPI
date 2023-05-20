@@ -1,20 +1,13 @@
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import pyotp
-from flask_mail import Mail,Message
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = '' #Enter your Email
-app.config['MAIL_PASSWORD'] = '' #Enter your PassWord
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
-
-mail = Mail(app)
-
 app.config['MONGO_URI'] = 'mongodb://rootuser:rootpass@localhost:27017/PythonTry?authSource=admin' #Enter your MONGO_URL
 app.config['JWT_SECRET_KEY'] = 'JBcnvFSv0R1HSJFNE_kUF-yMAm6vTE4EpzR_CrmjC6w' #Enter YOur JWT KEY
 mongo = PyMongo(app)
@@ -107,7 +100,7 @@ def forgot_password():
     save_reset_token(email, reset_token)
 
     # Send the password reset email to the user
-    send_reset_token_email(email, reset_token) #TODO setup mail server for sendig OTP
+    send_reset_token_email(email, reset_token)
 
     return jsonify({'message': 'Password reset email sent'}), 200
 
@@ -152,19 +145,38 @@ def save_reset_token(email, reset_token):
 
 # Function to send the password reset email
 def send_reset_token_email(email, reset_token):
-    subject = 'Password Reset OTP'
-    body = f'Hi, {email}!\n\nYou have requested to reset your password. Your OTP is: {reset_token}\n\nIf you did not request a password reset, please ignore this email.\n\nBest regards,\nThe Healthcare Team'
+    sender = 'harshsurani08@gmail.com'
+    recipient = email
+    subject = 'Password Reset'
+    message = f'Hi, {email}!\n\nYou have requested to reset your password. Your reset token is: {reset_token}\n\nIf you did not request a password reset, please ignore this email.\n\nBest regards,\nThe Healthcare Team'
 
-    # Create the message object
-    message = Message(subject=subject, recipients=[email], body=body)
+    send_email(sender, recipient, subject, message)
+
+def send_email(sender, recipient, subject, message):
+    # Create a MIME message object
+    msg = MIMEMultipart()
+    msg['From'] = sender
+    msg['To'] = recipient
+    msg['Subject'] = subject
+
+    # Attach the message to the MIME message object
+    msg.attach(MIMEText(message, 'plain'))
 
     try:
-        # Send the email
-        print(message)
-        mail.send(message)
-        return jsonify({'message': 'Reset token email sent successfully'}), 200
+        # Establish a connection with the SMTP server
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            # Initiate the TLS connection
+            server.starttls()
+
+            # Log in to your email account
+            # in order to use this you have to add your email and get your app password from https://support.google.com/accounts/answer/185833?hl=en&authuser=1
+            server.login('Email', '16-character code') #todo Add email and password
+
+            # Send the email
+            server.send_message(msg)
+            print('Email sent successfully')
     except Exception as e:
-        return jsonify({'message': 'Failed to send reset token email'}), 500
+        print('Failed to send email:', str(e))
 
 # Function to check if the reset token is valid
 def is_valid_reset_token(email, reset_token):
