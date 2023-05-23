@@ -126,6 +126,45 @@ def reset_password():
         return jsonify({'message': 'Password reset successfully'}), 200
     else:
         return jsonify({'message': 'Failed to reset password'}), 500
+
+@app.route('/users/<user_email>', methods=['PUT'])
+def edit_user(user_email):
+    users = mongo.db.users
+
+    # Check if the user exists
+    user = users.find_one({'Email': user_email})
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    # Update the user data
+    update_fields = {}
+
+    if 'Email' in request.json and request.json['Email'] is not None:
+        update_fields['Email'] = request.json['Email']
+    if 'Password' in request.json and request.json['Password'] is not None:
+        update_fields['Password'] = request.json['Password']
+    if 'Address' in request.json and request.json['Address'] is not None:
+        update_fields['Address'] = request.json['Address']
+    if 'BloodGroup' in request.json and request.json['BloodGroup'] is not None:
+        update_fields['BloodGroup'] = request.json['BloodGroup']
+    if 'FirstName' in request.json and request.json['FirstName'] is not None:
+        update_fields['FirstName'] = request.json['FirstName']
+    if 'Gender' in request.json and request.json['Gender'] is not None:
+        update_fields['Gender'] = request.json['Gender']
+    if 'LastName' in request.json and request.json['LastName'] is not None:
+        update_fields['LastName'] = request.json['LastName']
+    if 'Number' in request.json and request.json['Number'] is not None:
+        update_fields['Number'] = request.json['Number']
+    if 'BirthDate' in request.json and request.json['BirthDate'] is not None:
+        update_fields['BirthDate'] = request.json['BirthDate']
+
+    # Update the user document in the database if there are fields to update
+    if update_fields:
+        users.update_one({'_id': user['_id']}, {'$set': update_fields})
+
+    return jsonify({'message': 'User updated successfully'}), 200
+
+
 def generate_reset_token(email):
     totp = pyotp.TOTP(pyotp.random_base32())
     reset_token = totp.now()
@@ -170,7 +209,7 @@ def send_email(sender, recipient, subject, message):
 
             # Log in to your email account
             # in order to use this you have to add your email and get your app password from https://support.google.com/accounts/answer/185833?hl=en&authuser=1
-            server.login('Email', '16-character code') #todo Add email and password
+            server.login('harshsurani08@gmail.com', 'daavshibjsvbgerg') #todo Add email and password
 
             # Send the email
             server.send_message(msg)
@@ -207,4 +246,4 @@ def update_password(email, new_password):
     return jsonify({'message': 'Password updated successfully'}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', debug=True)
