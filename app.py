@@ -8,7 +8,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
-app.config['MONGO_URI'] = 'mongodb://rootuser:rootpass@localhost:27017/PythonTry?authSource=admin' #Enter your MONGO_URL
+app.config['MONGO_URI'] = 'mongodb://rootuser:rootpass@mongodb:27017/PythonTry?authSource=admin'  # Updated MONGO_URI
 app.config['JWT_SECRET_KEY'] = 'JBcnvFSv0R1HSJFNE_kUF-yMAm6vTE4EpzR_CrmjC6w' #Enter YOur JWT KEY
 mongo = PyMongo(app)
 jwt = JWTManager(app)
