@@ -8,7 +8,8 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
-app.config['MONGO_URI'] = 'mongodb://rootuser:rootpass@mongodb:27017/PythonTry?authSource=admin'  # Updated MONGO_URI
+# app.config['MONGO_URI'] = 'mongodb://rootuser:rootpass@mongodb:27017/PythonTry?authSource=admin'  # MONGO_URI for Docker network
+app.config['MONGO_URI'] = 'mongodb://rootuser:rootpass@localhost:27017/PythonTry?authSource=admin'  # Updated MONGO_URI
 app.config['JWT_SECRET_KEY'] = 'JBcnvFSv0R1HSJFNE_kUF-yMAm6vTE4EpzR_CrmjC6w' #Enter YOur JWT KEY
 mongo = PyMongo(app)
 jwt = JWTManager(app)
@@ -106,10 +107,9 @@ def forgot_password():
 
 
 # Route for resetting the password
-@app.route('/reset_password', methods=['POST'])
-def reset_password():
-    reset_token = request.json['OTP']
-    new_password = request.json['NewPassword']
+@app.route('/verify_otp', methods=['POST'])
+def verify_otp():
+    reset_token = request.json['ResetToken']
 
     # Find the user by the reset token
     user = mongo.db.users.find_one({'ResetToken': reset_token})
@@ -118,6 +118,14 @@ def reset_password():
         return jsonify({'message': 'Invalid reset token or email'}), 400
 
     email = user['Email']
+
+    return jsonify({'message': 'OTP verification successful', 'email': email}), 200
+
+
+@app.route('/update_password', methods=['POST'])
+def update_password():
+    email = request.json['Email']
+    new_password = request.json['NewPassword']
 
     # Update the password for the user
     result = mongo.db.users.update_one({'Email': email}, {'$set': {'Password': new_password, 'ResetToken': ''}})
@@ -167,7 +175,7 @@ def edit_user(user_email):
 
 def generate_reset_token(email):
     totp = pyotp.TOTP(pyotp.random_base32())
-    reset_token = totp.now()
+    reset_token = str(totp.now())[-4:]
     return reset_token
 
 # Function to save the reset token in the database
